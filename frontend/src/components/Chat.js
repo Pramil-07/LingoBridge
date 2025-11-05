@@ -10,7 +10,7 @@ const Chat = () => {
   const [user, setUser] = useState(null);
   const [wsConnected, setWsConnected] = useState(false);
   const wsRef = useRef(null);
-  const userIdRef = useRef(null); // Store user ID in ref for WebSocket handler
+  const userIdRef = useRef(null);
   const scrollerRef = useRef(null);
 
   useEffect(() => {
@@ -21,7 +21,7 @@ const Chat = () => {
       try {
         const userRes = await axios.get('/api/me/', { headers: { Authorization: `Bearer ${token}` } });
         setUser(userRes.data);
-        userIdRef.current = userRes.data.id; // Store in ref for WebSocket handler
+        userIdRef.current = userRes.data.id;
 
         const messagesRes = await axios.get(`/api/messages/${friendId}/`, { headers: { Authorization: `Bearer ${token}` } });
         setMessages(messagesRes.data.map(msg => ({
@@ -46,12 +46,22 @@ const Chat = () => {
             alert(`Error: ${data.error}`);
             return;
           }
-          // Check if message is for this chat
+
+          // ✅ Fixed duplication issue here
           if (data.receiver === parseInt(friendId) || data.sender === parseInt(friendId)) {
-            // Use ref to get current user ID (avoids closure issue)
             const currentUserId = userIdRef.current;
-            const displayContent = data.sender === currentUserId ? data.content : data.translated_content;
-            setMessages(prev => [...prev, { ...data, displayContent }]);
+            const displayContent =
+              data.sender === currentUserId
+                ? data.content
+                : (data.translated_content || data.content);
+
+            setMessages(prev => {
+              // prevent duplicates by checking unique message id
+              const exists = prev.some(m => m.id === data.id);
+              if (exists) return prev;
+
+              return [...prev, { ...data, displayContent }];
+            });
           }
         } catch (err) {
           console.error('Error parsing WebSocket message:', err);
@@ -71,15 +81,15 @@ const Chat = () => {
         }
       }
     );
-    
+
     wsRef.current = wsConnection;
-    
+
     return () => {
       if (wsRef.current) {
         wsRef.current.close();
       }
     };
-  }, [friendId]); // Remove user?.id from dependencies to avoid reconnection loop
+  }, [friendId]);
 
   // Scroll to bottom when messages update
   useEffect(() => {
@@ -102,7 +112,6 @@ const Chat = () => {
       alert('Please enter a message');
     } else {
       alert('WebSocket not connected. Please wait for connection or refresh the page.');
-      // Try to reconnect
       if (wsRef.current) {
         wsRef.current.reconnect();
       }
@@ -142,7 +151,7 @@ const Chat = () => {
             const ts = msg.timestamp ? new Date(msg.timestamp) : null;
             const timeStr = ts ? ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
             return (
-              <div key={msg.id} className={`msg-row ${isCurrentUser ? 'me' : ''}`}>
+              <div key={msg.id || `${msg.sender}-${msg.timestamp}`} className={`msg-row ${isCurrentUser ? 'me' : ''}`}>
                 <div className={`msg-bubble ${isCurrentUser ? 'me' : ''}`}>
                   <div>{msg.displayContent || msg.content}</div>
                   <span className="msg-meta">{timeStr}</span>
