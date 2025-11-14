@@ -35,9 +35,9 @@ function App() {
             <Route
                 path="/chat/:friendId"
                 element={
-                  <ProtectedRoute>
+
                     <Chat />
-                  </ProtectedRoute>
+
                 }
             />
 

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, {createContext, useState, useEffect, useContext} from "react";
 import { getProfile, logoutUser } from "../utils/authService";
 
 export const AuthContext = createContext();
@@ -9,8 +9,10 @@ export const AuthProvider = ({ children }) => {
 
     const loadUser = async () => {
         try {
-            const res = await getProfile();
-            setUser(res.data);
+            const token = localStorage.getItem("access_token");
+            if (!token) return;
+            const response = await getProfile();
+            setUser(response.data);
         } catch (err) {
             setUser(null);
         } finally {
@@ -25,10 +27,15 @@ export const AuthProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        const token = localStorage.getItem('access_token');
-        if (token && process.env.NEXT_PUBLIC_API_URL) {
+        console.log("🔍 Current user:", user);
+        console.log("🔍 Token:", localStorage.getItem("access_token"));
+    }, [user]);
+
+
+    useEffect(() => {
+
             loadUser();
-        }
+
     }, []);
 
 
@@ -38,3 +45,4 @@ export const AuthProvider = ({ children }) => {
         </AuthContext.Provider>
     );
 };
+export const useAuth = () => useContext(AuthContext);

@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 
 
 
-const SignUp = () => {
+const Signup = () => {
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -210,7 +210,7 @@ const SignUp = () => {
           <div className="mt-6 text-center">
             <p className="text-slate-400">
               Already have an account?{" "}
-              <Link href="/login" to="/login" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
+              <Link href="/frontend/src/components/Login" to="/login" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
                 Sign in here
               </Link>
             </p>
@@ -234,4 +234,4 @@ const SignUp = () => {
   )
 }
 
-export default SignUp
+export default Signup
